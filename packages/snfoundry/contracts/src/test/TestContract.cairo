@@ -1,36 +1,52 @@
-use starknet::{ContractAddress, contract_address_const};
-
+use starknet::{ContractAddress, contract_address_const, felt, assert_eq};
 use snforge_std::{declare, ContractClassTrait};
 use openzeppelin::utils::serde::SerializedAppend;
 
-use contracts::YourContract::{
-    IYourContractSafeDispatcher, IYourContractSafeDispatcherTrait, IYourContractDispatcher,
-    IYourContractDispatcherTrait
+use contracts::Staker::{
+    IStaker, IStakerTrait
 };
 
 use openzeppelin::tests::utils::constants::{
     ZERO, OWNER, SPENDER, RECIPIENT, NAME, SYMBOL, DECIMALS, SUPPLY, VALUE
 };
 
-fn deploy_contract(name: ByteArray) -> ContractAddress {
-    let contract = declare(name);
+fn deploy_staker_contract() -> ContractAddress {
+    let contract = declare("Staker");
     let mut calldata = array![];
     calldata.append_serde(OWNER());
     contract.deploy(@calldata).unwrap()
 }
 
 #[test]
-fn test_deployment_values() {
-    let contract_address = deploy_contract("YourContract");
+fn test_stake_functionality() {
+    let contract_address = deploy_staker_contract();
+    let staker = IStaker { contract_address };
 
-    let dispatcher = IYourContractDispatcher { contract_address };
+    let initial_balance = staker.balances(contract_address);
+    let stake_amount: u256 = 1000;
 
-    let current_gretting = dispatcher.gretting();
-    let expected_gretting: ByteArray = "Building Unstoppable Apps!!!";
-    assert_eq!(current_gretting, expected_gretting, "Should have the right message on deploy");
+    // Simulate staking
+    staker.stake(stake_amount);
 
-    let new_greeting: ByteArray = "Learn Scaffold-ETH 2! :)";
-    dispatcher.set_gretting(new_greeting.clone(), 0); // we transfer 0 eth
+    let expected_balance = initial_balance + stake_amount;
+    let actual_balance = staker.balances(contract_address);
 
-    assert_eq!(dispatcher.gretting(), new_greeting, "Should allow setting a new message");
+    assert_eq!(actual_balance, expected_balance, "Balance should be increased by the stake amount");
+}
+
+#[test]
+fn test_withdraw_functionality() {
+    let contract_address = deploy_staker_contract();
+    let staker = IStaker { contract_address };
+
+    let stake_amount: u256 = 1000;
+    staker.stake(stake_amount);
+
+    // Assuming the contract is open for withdrawal
+    staker.withdraw();
+
+    let expected_balance: u256 = 0;
+    let actual_balance = staker.balances(contract_address);
+
+    assert_eq!(actual_balance, expected_balance, "Balance should be zero after withdrawal");
 }
