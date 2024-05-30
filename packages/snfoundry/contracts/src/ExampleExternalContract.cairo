@@ -1,7 +1,7 @@
 #[starknet::interface]
 pub trait IExampleExternalContract<T> {
     fn complete(ref self: T, amount: u256);
-    fn completed(self: @T) -> bool;
+    fn completed(ref self: T) -> bool;
 }
 
 #[starknet::contract]
@@ -16,11 +16,9 @@ mod ExampleExternalContract {
     impl ExampleExternalContractImpl of super::IExampleExternalContract<ContractState> {
         fn complete(ref self: ContractState, amount: u256) {
             self.completed.write(true);
-            if amount > 0 {
-                self.balance.write(self.balance.read() + amount);
-            }
+            self.balance.write(self.balance.read() + amount);
         }
-        fn completed(self: @ContractState) -> bool {
+        fn completed(ref self: ContractState) -> bool {
             self.completed.read()
         }
     }

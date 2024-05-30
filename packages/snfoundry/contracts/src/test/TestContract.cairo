@@ -1,29 +1,33 @@
-use starknet::{ContractAddress, contract_address_const, felt, assert_eq};
-use snforge_std::{declare, ContractClassTrait};
+use contracts::Staker::IStakerDispatcherTrait;
+use contracts::Staker::IStakerDispatcher;
+use starknet::{ContractAddress, contract_address_const, get_block_timestamp};
+use snforge_std::{declare, ContractClassTrait, start_warp, CheatTarget};
 use openzeppelin::utils::serde::SerializedAppend;
-
-use contracts::Staker::{
-    IStaker, IStakerTrait
-};
 
 use openzeppelin::tests::utils::constants::{
     ZERO, OWNER, SPENDER, RECIPIENT, NAME, SYMBOL, DECIMALS, SUPPLY, VALUE
 };
 
 fn deploy_staker_contract() -> ContractAddress {
-    let contract = declare("Staker");
+    let external = declare("ExampleExternalContract").unwrap();
+    let (external_address, _) = external.deploy(@array![]).unwrap();
+
+    let contract = declare("Staker").unwrap();
     let mut calldata = array![];
-    calldata.append_serde(OWNER());
-    contract.deploy(@calldata).unwrap()
+    calldata.append_serde(external_address);
+    let (contract_address, _) = contract.deploy(@calldata).unwrap();
+    contract_address
 }
 
 #[test]
-fn test_stake_functionality() {
+fn test_mint_item() {
     let contract_address = deploy_staker_contract();
-    let staker = IStaker { contract_address };
-
+    // let owner = OWNER();
+   
+    let staker = IStakerDispatcher { contract_address };
+    
     let initial_balance = staker.balances(contract_address);
-    let stake_amount: u256 = 1000;
+    let stake_amount: u256 = 1_000_000_000_000_000_000;
 
     // Simulate staking
     staker.stake(stake_amount);
@@ -37,10 +41,14 @@ fn test_stake_functionality() {
 #[test]
 fn test_withdraw_functionality() {
     let contract_address = deploy_staker_contract();
-    let staker = IStaker { contract_address };
+    let staker = IStakerDispatcher { contract_address };
 
-    let stake_amount: u256 = 1000;
+    let stake_amount: u256 = 1_000_000_000_000_000_000;
     staker.stake(stake_amount);
+
+    let time = staker.time_left();
+    // miss get current blocktime
+    start_warp(CheatTarget::All, get_block_timestamp() + time);
 
     // Assuming the contract is open for withdrawal
     staker.withdraw();
