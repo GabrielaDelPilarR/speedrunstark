@@ -1,6 +1,7 @@
+"use client"
 import Image from "next/image";
 import type { NextPage } from "next";
-
+import { useAccount } from "@starknet-react/core";
 const Home: NextPage = () => {
   const connectedAddress = useAccount();
   return (

@@ -16,9 +16,9 @@ mod ExampleExternalContract {
     impl ExampleExternalContractImpl of super::IExampleExternalContract<ContractState> {
         fn complete(ref self: ContractState, amount: u256) {
             self.completed.write(true);
-            if amount > 0 {
+           
                 self.balance.write(self.balance.read() + amount);
-            }
+         
         }
         fn completed(self: @ContractState) -> bool {
             self.completed.read()
